@@ -1,0 +1,42 @@
+function [grads, h, loss] = ComputeGrads(X, Y, RNN, h0)
+b = RNN.b;
+c = RNN.c;
+U = RNN.U;
+W = RNN.W;
+V = RNN.V;
+K = size(U, 2);
+n = size(X, 2);
+m = size(b, 1);
+
+h = zeros(m, n);
+h(:, 1) = h0;
+
+%forward pass
+for t = 1:nb
+    a{t} = W * h(:, t) + U * X(:, t) + b;
+    h(:, t + 1) = tanh(a{t});
+    o{t} = V * h(:, t + 1) + c;
+    P(:, t) = softmax(o{t});
+end
+
+l_cross = -log(Y' * P);
+loss = trace(l_cross);
+
+%backpropagation
+G = -(Y - P);
+grads_l = ones(1, n);
+grads_p = -((Y' * P).^(-1))*Y';
+grads_o = G';
+
+grads_h =zeros(n, m);
+grads_a = zeros(n, m);
+grads_h(n, :) = grads_o(n, :) * V;
+grads_a(n, :) = grads_h(n, :)*diag(1 - tanh(a{n}).^2);
+
+t = n - 1;
+for i = 1:n-1
+    grads_h(t, :) = grads_o(t, :) * V + grads_a(t + 1, :) * W;
+    grads_a(t, :) = grads_h(t, :) * diag(1 - tanh(a{t}).^2);
+end
+
+end
